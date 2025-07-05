@@ -1,7 +1,5 @@
 # Byte-compiled / cache
 __pycache__/
-*.py[cod]
-*.joblib
 
 # Python envs
 .venv/
