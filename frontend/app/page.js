@@ -4,29 +4,46 @@
 
 import React, { useState } from "react";
 import axios from "axios";
+import { motion, AnimatePresence } from "motion/react"
 
 export default function SpamChecker() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState([]);
+  const [isTyping, setIsTyping] = useState(false);
 
   const handleCheck = async () => {
     if (!message.trim()) return;
     setLoading(true);
+    setIsTyping(true);
     try {
       const res = await axios.post("https://spam-detection-90cj.onrender.com/predict", { text: message });
-      const reply = res.data.prediction === "spam" ? "This is predicted to be spam! It is recommended that you block the number, report as spam, and do not engage further with the sender." : "This is predicted to be a legitimate message!";
-      setHistory((prev) => [...prev, { user: message, bot: reply }]);
+      const reply = res.data.prediction === "spam"
+        ? "❌ This is predicted to be spam! It is recommended that you block the number, report as spam, and do not engage further with the sender."
+        : "✅ This is predicted to be a legitimate message!";
+
+      setTimeout(() => {
+        setHistory((prev) => [...prev, { user: message, bot: reply }]);
+        setIsTyping(false);
+      }, 1000);
     } catch {
-      setHistory((prev) => [...prev, { user: message, bot: "Error: Could not reach backend." }]);
+      setTimeout(() => {
+        setHistory((prev) => [...prev, { user: message, bot: "Error: Could not reach backend." }]);
+        setIsTyping(false);
+      }, 1000);
     }
     setMessage("");
     setLoading(false);
   };
 
   return (
-    <div className="flex flex-col items-center justify-end min-h-screen bg-white p-4">
-      <div className="w-full max-w-md flex flex-col space-y-2 mb-4">
+    <div>
+      <div className="fixed top-0 w-full flex justify-center bg-white shadow-sm z-10 text-2xl">
+        <h1 className="text-gray-800 font-semibold py-3">Spam Checker</h1>
+      </div>
+
+      <div className="flex flex-col items-center justify-end min-h-screen bg-white p-4 pt-16">
+        <div className="w-full max-w-md flex flex-col space-y-2 mb-4">
         {history.map((entry, idx) => (
           <div key={idx} className="space-y-1">
             <div className="flex justify-end">
@@ -41,8 +58,22 @@ export default function SpamChecker() {
               </div>
             </div>
           </div>
-))}
+        ))}
+
+        {isTyping && (
+          <div className="flex justify-start">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ repeat: Infinity, repeatType: "reverse", duration: 0.8 }}
+              className="bg-gray-200 text-gray-800 px-4 py-2 rounded-2xl max-w-xs shadow text-sm italic"
+            >
+              AI is typing...
+            </motion.div>
+          </div>
+        )}
       </div>
+
 
       <div className="w-full max-w-md flex items-center bg-white rounded-full shadow px-4 py-2">
         <input
@@ -66,6 +97,7 @@ export default function SpamChecker() {
           {loading ? "..." : "Send"}
         </button>
       </div>
+    </div>
     </div>
   );
 }
